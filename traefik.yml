@@ -1,0 +1,31 @@
+version: "3.4"
+services:
+  traefik:
+    image: traefik:1.7
+    command:
+      - "--api"
+      - "--entrypoints=Name:http Address::80"
+      - "--defaultentrypoints=http"
+      - "--docker"
+      - "--docker.swarmmode"
+      - "--docker.domain=zitrolab.ro"
+      - "--docker.watch"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - proxy
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 8080
+        published: 8080
+        #        mode: host
+    deploy:
+      restart_policy:
+        condition: on-failure
+      mode: global
+networks:
+  proxy:
+    external: true
+

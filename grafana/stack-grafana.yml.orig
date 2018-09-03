@@ -1,0 +1,62 @@
+version: '3.5'
+services:
+  influxdb:
+    image: influxdb
+    environment:
+      - INFLUXDB_DB=telegraf
+      - INFLUXDB_USER=telegraf
+      - INFLUXDB_USER_PASSWORD=TelegrafPassword
+    volumes:
+      - influxdb:/var/lib/influxdb
+    ports:
+      - "8086:8086"
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=false"
+      - "container_group=TIG"
+ 
+  telegraf:
+    image: telegraf
+    volumes:
+      - $PWD/conf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    links:
+      - influxdb
+    networks:
+      - backend
+    labels:
+      - "traefik.enable=false"
+      - "container_group=TIG"
+ 
+  grafana:
+    image: grafana/grafana
+    environment:
+      - GF_SERVER_ROOT_URL=https://grafana.example.com
+      - GF_SECURITY_ADMIN_PASSWORD=GrafanaPassword
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel,raintank-worldping-app,jdbranham-diagram-panel
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_SERVER_DOMAIN=example.com
+    volumes:
+      - grafana:/var/lib/grafana
+    networks:
+      - traefik
+      - backend
+    ports:
+      - 3000:3000
+    labels:
+      - "traefik.backend=tick"
+      - "traefik.frontend.rule=Host:grafana.example.com"
+      - "traefik.docker.network=traefik"
+      - "traefik.port=3000"
+      - "container_group=TIG"
+ 
+networks:
+  backend:
+  traefik:
+    external:
+      name: traefik
+ 
+volumes:
+  grafana:
+  influxdb:
